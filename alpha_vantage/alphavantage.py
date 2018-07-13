@@ -1,5 +1,5 @@
 import requests
-import sys
+import os
 from functools import wraps
 import inspect
 # Pandas became an optional dependency, but we still want to track it
@@ -9,12 +9,6 @@ try:
 except ImportError:
     _PANDAS_FOUND = False
 import csv
-
-# Avoid compability issues
-if sys.version_info.major == 3 and sys.version_info.minor == 6:
-    from json import loads
-else:
-    from simplejson import loads
 
 
 class AlphaVantage(object):
@@ -28,7 +22,7 @@ class AlphaVantage(object):
         "https://www.alphavantage.co/digital_currency_list/"
 
     def __init__(self, key=None, retries=5, output_format='json',
-                 treat_info_as_error=True, indexing_type='date', proxy={}):
+                 treat_info_as_error=True, indexing_type='date', proxy=None):
         """ Initialize the class
 
         Keyword Arguments:
@@ -40,12 +34,19 @@ class AlphaVantage(object):
             indexing_type: Either 'date' to use the default date string given
             by the alpha vantage api call or 'integer' if you just want an
             integer indexing on your dataframe. Only valid, when the
-            output_format is 'pandas'.
+            output_format is 'pandas'
+            proxy: Dictionary mapping protocol or protocol and hostname to 
+            the URL of the proxy.
         """
         if key is None:
-            raise ValueError(
-                'Get a free key from the alphavantage website:'
-                ' https://www.alphavantage.co/support/#api-key')
+            key = os.getenv('ALPHAVANTAGE_API_KEY')
+        if not key or not isinstance(key, str):
+            raise ValueError('The AlphaVantage API key must be provided '
+                             'either through the key parameter or '
+                             'through the environment variable '
+                             'ALPHAVANTAGE_API_KEY. Get a free key '
+                             'from the alphavantage website: '
+                             'https://www.alphavantage.co/support/#api-key')
         self.key = key
         self.retries = retries
         self.output_format = output_format
@@ -58,7 +59,7 @@ class AlphaVantage(object):
         # variable will be overriden by those functions not needing it.
         self._append_type = True
         self.indexing_type = indexing_type
-        self.proxy = proxy
+        self.proxy = proxy or {}
 
     def _retry(func):
         """ Decorator for retrying api calls (in case of errors from the api
@@ -215,8 +216,14 @@ class AlphaVantage(object):
                     self.output_format))
         return _format_wrapper
 
-    def set_proxy(self, proxy={}):
-        self.proxy = proxy
+    def set_proxy(self, proxy=None):
+        """ Set a new proxy configuration
+
+        Keyword Arguments:
+            proxy: Dictionary mapping protocol or protocol and hostname to 
+            the URL of the proxy.
+        """
+        self.proxy = proxy or {}
 
     def map_to_matype(self, matype):
         """ Convert to the alpha vantage math type integer. It returns an
