@@ -33,6 +33,12 @@ git clone https://github.com/RomelTorres/alpha_vantage.git
 pip install -e alpha_vantage
 ```
 
+## Instructions
+1) Get free AlphaVantage API key from their website
+2) Download files
+3) Set key value in run.py
+4) Run run.py. Enjoy
+
 ## Usage
 To get data in a python, simply import the library and call the object with your api key and get ready for some awesome free realtime finance data. Your api key may also be stored in the environment variable ``ALPHAVANTAGE_API_KEY``.
 ```python
