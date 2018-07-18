@@ -36,13 +36,10 @@ def initialize():
 
 	ts = TimeSeries(key = "", output_format = "pandas") # <--- SET API KEY HERE
 
-	print("---------- BY LEE WEI MIN ----------\n\n\n")
+	print("-----Straits Times Index Technical Analysis Project: STITAP-----\n\n\n")
 	time.sleep(0.1)
 
-	print("-----FREE AUTO STOCK SCREENER 1.0-----\n\n\n")
-	time.sleep(0.1)
-
-	print("-----SUPPORTS STI (MORE TO COME)-----\n\n\n")
+	print("-----V1.0.0-----\n\n\n")
 	time.sleep(0.1)
 
 	print("INITIALIZING: LOADING AND SAVING ALL 30 STI STOCK DATA:\n\n")
