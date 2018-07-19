@@ -8,7 +8,7 @@ Get your free API key [here](https://www.alphavantage.co/support/#api-key).
 
 ## How it works
 
-For a gentle introduction to STITAP and its functionalities, you can refer to [this article].
+For a gentle introduction to STITAP and its functionalities, you can refer to [this article](http://www.leeweimin.com/2018/07/19/programming-your-free-singapore-stock-screener/).
 
 Simply put, STITAP pulls data from AlphaVantage through its API before performing calculations and storing the results in csv files. The program is run using the python shell.
 
@@ -63,7 +63,7 @@ for company_name, company_ticker in sti_stocks.items():
 * Relative Strength Index (RSI)
 * Stochastic Relative Strength Index (StochRSI)
 
-You can refer to examples [here]
+You can refer to examples [here](http://www.leeweimin.com/2018/07/19/programming-your-free-singapore-stock-screener/).
 
 ## Contributing
 
