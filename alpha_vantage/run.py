@@ -26,7 +26,7 @@ def main():
 	AlphaVantage limits API calls, so the program will take around 10mins to finish executing per run.
 	Original stock market data will be stored at sti_stock_data/original data.
 	
-	ts = TimeSeries(key = "PKJT2CWR5IH8QHVS", output_format = "pandas") # <--- SET API KEY HERE
+	ts = TimeSeries(key = "", output_format = "pandas") # <--- SET API KEY HERE
 
 	ti = TechIndicators()"""
 
