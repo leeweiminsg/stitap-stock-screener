@@ -25,10 +25,10 @@ def main():
 	Set the key argument to your own unique API key value.
 	AlphaVantage limits API calls, so the program will take around 10mins to finish executing per run.
 	Original stock market data will be stored at sti_stock_data/original data.
-	"""
-	ts = TimeSeries(key = "", output_format = "pandas") # <--- SET API KEY HERE
+	
+	ts = TimeSeries(key = "PKJT2CWR5IH8QHVS", output_format = "pandas") # <--- SET API KEY HERE
 
-	ti = TechIndicators()
+	ti = TechIndicators()"""
 
 
 def initialize():
@@ -49,7 +49,7 @@ def initialize():
 		time.sleep(0.1)
 		print ("LOADING: " + company_name + " " + company_ticker + "\n")
 		company_name_no_spaces = company_name.replace(" ", "_")
-		time.sleep(10)
+		time.sleep(60) # <--- Adjust the duration (No. of seconds) of waiting time between each API call here
 		
 		#Makes API call
 		data, meta_data  = ts.get_daily_adjusted(symbol = company_ticker)
