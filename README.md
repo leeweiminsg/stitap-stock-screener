@@ -73,15 +73,20 @@ If you can find a way to improve this project, do send a pull request.
 
 ## FAQ
 
-* **My program crashed shortly after running run.py. What's wrong?**
+* **My program crashed shortly after running run.py. How do I fix this?**
 
   * The program may have exceeded the API call frequency limit. You can either restart the program after waiting a few minutes or adjust the frequency of API calls.
+
+* **The technical indicator values are not exactly accurate. Why?**
+
+	 * The timeframes used in the program are estimated and do not take into account public holidays. We will fix this in future updates.
 
 ## Contact
 
 You can get in touch with me through my [website](http://www.leeweimin.com/contact/).
 
 ## TODOs:
+* Improve accuracy of technical indicators
 * Reduce code repetition
 * Add more technical indicators
 * Set up a database and server
