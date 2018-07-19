@@ -1,210 +1,90 @@
-# STI_Stock_Screener V1.0.0
+# STITAP Stock Screener
 
-[![Documentation Status](https://readthedocs.org/projects/alpha-vantage/badge/?version=latest)](http://alpha-vantage.readthedocs.io/en/latest/?badge=latest)
-[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/RomelTorres/alpha_vantage.svg)](http://isitmaintained.com/project/RomelTorres/alpha_vantage "Average time to resolve an issue")
-[![Percentage of issues still open](http://isitmaintained.com/badge/open/RomelTorres/alpha_vantage.svg)](http://isitmaintained.com/project/RomelTorres/alpha_vantage "Percentage of issues still open")
+STITAP stock screener is a free, open-source program which screens all 30 companies of the Straits Times Index using common technical indicators.
 
-*Python module to get stock data/cryptocurrencies from the Alpha Vantage API*
+It uses a [python interface](https://github.com/RomelTorres/alpha_vantage) to retrieve data from [Alpha Vantage](https://www.alphavantage.co/), which provides a free API for both historical and real-time financial data.
 
-Alpha Vantage delivers a free API for real time financial data and most used finance indicators in a simple json or pandas format. This module implements a python interface to the free API provided by Alpha
-Vantage (http://www.alphavantage.co/). It requires a free API, that can be requested on http://www.alphavantage.co/support/#api-key. You can have a look at all the api calls available in their documentation http://www.alphavantage.co/documentation
+Get your free API key [here](https://www.alphavantage.co/support/#api-key).
 
-## News
+## How it works
 
-* From version 1.9.0 onwards, the urllib was substituted by pythons request library that is thread safe. If you have any error, post an issue.
-* From version 1.8.0 onwards, the column names of the data frames have changed, they are now exactly what alphavantage gives back in their json response. You can see the examples in better detail in the following git repo:  https://github.com/RomelTorres/av_example
-* From version 1.6.0, pandas was taken out as a hard dependency.
+For a gentle introduction to STITAP and its functionalities, you can refer to [this article].
 
-## Install
-To install the package use:
-```shell
-pip install alpha_vantage
-```
-Or install with pandas support, simply install pandas too:
-```shell
-pip install alpha_vantage, pandas
-```
+Simply put, STITAP pulls data from AlphaVantage through its API before performing calculations and storing the results in csv files. The program is run using the python shell.
 
-If you want to install from source, then use:
-```shell
-git clone https://github.com/RomelTorres/alpha_vantage.git
-pip install -e alpha_vantage
-```
+## Installation
 
-## Instructions
-1) Get free AlphaVantage API key from their website
-2) Download files
-3) Set key value in run.py
-4) Run run.py. Enjoy
+### For normal users
 
-## Usage
-To get data in a python, simply import the library and call the object with your api key and get ready for some awesome free realtime finance data. Your api key may also be stored in the environment variable ``ALPHAVANTAGE_API_KEY``.
-```python
-from alpha_vantage.timeseries import TimeSeries
-ts = TimeSeries(key='YOUR_API_KEY')
-# Get json object with the intraday data and another with  the call's metadata
-data, meta_data = ts.get_intraday('GOOGL')
-```
-Internally there is a retries counter, that can be used to minimize connection errors (in case that the api is not able to respond in time), the default is set to
-5 but can be increased or decreased whenever needed.
-```python
-ts = TimeSeries(key='YOUR_API_KEY',retries='YOUR_RETRIES')
-```
-The library supports giving its results as json dictionaries (default), pandas dataframe (if installed) or csv, simply pass the parameter output_format='pandas' to change the format of the output for all the api calls in the given class. Please note that some API calls do not support the csv format (namely ```ForeignExchange, SectorPerformances and TechIndicators```) because the API endpoint does not support the format on their calls either.
+If you do not already have Python IDLE installed, you can get it [here](https://www.python.org/getit/).
+
+Clone the repository by clicking the green button on the top right corner of the page.
+
+Go to the folder STI_Stock_Screener -> alpha_vantage. Run the file run.py.
+
+## Running STITAP
+
+Get your free AlphaVantage API key [here](https://www.alphavantage.co/support/#api-key).
+
+In run.py, set the key argument to your API key value:
 
 ```python
-ts = TimeSeries(key='YOUR_API_KEY',output_format='pandas')
+def initialize():
+	"""Initializes the program by fetching and storing data"""
+
+	ts = TimeSeries(key = "", output_format = "pandas") # <--- SET API KEY HERE
 ```
 
-The pandas data frame given by the call, can have either a date string indexing or an integer indexing (by default the indexing is 'data'),
-depending on your needs, you can use both.
+Run run.py. Enjoy!
+
+### Adjust API call frequency
+
+*Do note that AlphaVantage limits the frequency of API calls*
+
+You can adjust the frequency of API calls in the initialize() function:
 
 ```python
- # For the default date string index behavior
-ts = TimeSeries(key='YOUR_API_KEY',output_format='pandas', indexing_type='date')
-# For the default integer index behavior
-ts = TimeSeries(key='YOUR_API_KEY',output_format='pandas', indexing_type='integer')
+for company_name, company_ticker in sti_stocks.items():
+		time.sleep(0.1)
+		print ("LOADING: " + company_name + " " + company_ticker + "\n")
+		company_name_no_spaces = company_name.replace(" ", "_")
+		time.sleep(60) # <--- Adjust the duration (No. of seconds) of waiting time between each API call here
 ```
 
-## Data frame structure
-The data frame structure is given by the call on alpha vantage rest API. The column names of the data frames
-are the ones given by their data structure. For example, the following call:
-```python
-from alpha_vantage.timeseries import TimeSeries
-from pprint import pprint
-ts = TimeSeries(key='YOUR_API_KEY', output_format='pandas')
-data, meta_data = ts.get_intraday(symbol='MSFT',interval='1min', outputsize='full')
-pprint(data.head(2))
-```
-Would result on:
-![alt text](images/docs_data_frame_header.png?raw=True "Data Header format.")
+## Features
 
-The headers from the data are specified from Alpha Vantage (in previous versions, the numbers in the headers were removed, but long term is better to have the data exactly as Alpha Vantage produces it.)
-## Plotting
-### Time Series
-Using pandas support we can plot the intra-minute value for 'MSFT' stock quite easily:
+### General screen
 
-```python
-from alpha_vantage.timeseries import TimeSeries
-import matplotlib.pyplot as plt
-
-ts = TimeSeries(key='YOUR_API_KEY', output_format='pandas')
-data, meta_data = ts.get_intraday(symbol='MSFT',interval='1min', outputsize='full')
-data['4. close'].plot()
-plt.title('Intraday Times Series for the MSFT stock (1 min)')
-plt.show()
-```
-Giving us as output:
-![alt text](images/docs_ts_msft_example.png?raw=True "MSFT minute value plot example")
+* Top 5 stocks with highest/lowest price/volume change
 
 ### Technical indicators
-The same way we can get pandas to plot technical indicators like Bolliger Bands®
 
-```python
-from alpha_vantage.techindicators import TechIndicators
-import matplotlib.pyplot as plt
+* Moving Average Convergence / Divergence (MACD)
+* Relative Strength Index (RSI)
+* Stochastic Relative Strength Index (StochRSI)
 
-ti = TechIndicators(key='YOUR_API_KEY', output_format='pandas')
-data, meta_data = ti.get_bbands(symbol='MSFT', interval='60min', time_period=60)
-data.plot()
-plt.title('BBbands indicator for  MSFT stock (60 min)')
-plt.show()
-```
-Giving us as output:
-![alt text](images/docs_ti_msft_example.png?raw=True "MSFT minute value plot example")
-
-### Sector Performance
-We can also plot sector performance just as easy:
-
-```python
-from alpha_vantage.sectorperformance import SectorPerformances
-import matplotlib.pyplot as plt
-
-sp = SectorPerformances(key='YOUR_API_KEY', output_format='pandas')
-data, meta_data = sp.get_sector()
-data['Rank A: Real-Time Performance'].plot(kind='bar')
-plt.title('Real Time Performance (%) per Sector')
-plt.tight_layout()
-plt.grid()
-plt.show()
-```
-
-Giving us as output:
-
-![alt text](images/docs_sp_rt_example.png?raw=True "Real Time Sector Performance")
-
-### Crypto currencies.
-
-We can also plot crypto currencies prices like BTC:
-
-```python
-from alpha_vantage.cryptocurrencies import CryptoCurrencies
-import matplotlib.pyplot as plt
-
-cc = CryptoCurrencies(key='YOUR_API_KEY', output_format='pandas')
-data, meta_data = cc.get_digital_currency_intraday(symbol='BTC', market='CNY')
-data['1b. price (USD)'].plot()
-plt.tight_layout()
-plt.title('Intraday value for bitcoin (BTC)')
-plt.grid()
-plt.show()
-```
-
-Giving us as output:
-![alt text](images/docs_cripto_btc.png?raw=True "Crypto Currenci daily (BTC)")
-
-### Foreign Exchange (FX)
-
-The foreign exchange is just metadata, thus only available as json format (using the 'csv' or 'pandas' format will raise an Error)
-
-```python
-import alpha_vantage.foreignexchange import ForeignExchange
-from pprint import pprint
-cc = ForeignExchange(key='YOUR_API_KEY')
-# There is no metadata in this call
-data, _ = cc.get_currency_exchange_rate(from_currency='BTC',to_currency='USD')
-pprint(data)
-```
-Giving us as output:
-```
-{
-    '1. From_Currency Code': 'BTC',
-    '2. From_Currency Name': 'Bitcoin',
-    '3. To_Currency Code': 'USD',
-    '4. To_Currency Name': 'United States Dollar',
-    '5. Exchange Rate': '5566.80500105',
-    '6. Last Refreshed': '2017-10-15 15:13:08',
-    '7. Time Zone': 'UTC'
-}
-```
-
-## Examples
-
-I have added a repository with examples in a python notebook to better see the
-usage of the library: https://github.com/RomelTorres/av_example
-
-
-## Tests
-
-In order to run the tests you have to first export your API key so that the test can use it to run, also the test require pandas, mock and nose.
-```shell
-export API_KEY=YOUR_API_KEY
-cd alpha_vantage
-nosetests
-```
-
-## Documentation
-The code documentation can be found at https://alpha-vantage.readthedocs.io/en/latest/
+You can refer to examples [here]
 
 ## Contributing
-Contributing is always welcome, since sometimes I am busy. Just contact me on how best you can contribute.
+
+Contributions are always welcome.
+
+If you can find a way to improve this project, do send a pull request.
+
+## FAQ
+
+* **My program crashed shortly after running run.py. What's wrong?**
+
+  * The program may have exceeded the API call frequency limit. You can either restart the program after waiting a few minutes or adjust the frequency of API calls.
+
+## Contact
+
+You can get in touch with me through my [website](http://www.leeweimin.com/contact/).
 
 ## TODOs:
-* The integration tests are not being run at the moment within travis, gotta fix them to run.
-* Add test for csv calls as well.
-* Add tests for incompatible parameter raise errors.
+* Reduce code repetition
+* Add more technical indicators
+* Set up a database and server
 
 ## Star if you like it.
-If you like or use this project, consider showing your support by staring it.
-
-:venezuela:-:de:
+If you enjoyed using this, do show your support by starring it!
