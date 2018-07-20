@@ -1,4 +1,4 @@
-# STITAP Stock Screener
+# STITAP Stock Screener V1.1.0
 
 STITAP stock screener is a free, open-source program which screens all 30 companies of the Straits Times Index using common technical indicators.
 
@@ -77,19 +77,19 @@ If you can find a way to improve this project, do send a pull request.
 
 * **My program crashed shortly after running run.py. How do I fix this?**
 
-  * The program may have exceeded the API call frequency limit. You can either restart the program after waiting a few minutes or adjust the frequency of API calls.
+  * The program may have exceeded the API call frequency limit. You can either restart the program after waiting a few minutes or adjust the frequency of API calls (please refer to the "adjust API call frequency" section).
 
 * **The technical indicator values are not exactly accurate. Why?**
 
-	 * The timeframes used in the program are estimated and do not take into account public holidays. We will fix this in future updates.
+	 * The timeframes used in the program are estimated and do not take into account public holidays. We will fix this in future updates. (*This has been fixed in V1.1.0*)
 
 ## Contact
 
 You can get in touch with me through my [website](http://www.leeweimin.com/contact/).
 
 ## TODOs:
-* Improve accuracy of technical indicators
-* Reduce code repetition
+* Improve accuracy of technical indicators (*Done*)
+* Reduce code repetition (*Done*)
 * Add more technical indicators
 * Set up a database and server
 
