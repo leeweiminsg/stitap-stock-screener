@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 import decimal
 import json
 import pandas as pd
@@ -6,6 +7,9 @@ import numpy as np
 from pprint import pprint
 from alpha_vantage.timeseries import TimeSeries
 from alpha_vantage.techindicators import TechIndicators
+
+sg_public_holidays_dates = ["2018-01-01", "2018-02-16", "2018-02-17", "2018-03-30", "2018-05-01", "2018-05-29",
+					  "2018-06-15", "2018-08-09", "2018-08-22", "2018-11-06", "2018-12-25"]
 
 sti_stocks = {"CityDev":"C09.SI", "DBS":"D05.SI", "UOL":"U14.SI", "SingTel":"Z74.SI", "UOB":"U11.SI",
 				"Keppel Corp":"BN4.SI", "CapitaLand":"C31.SI", "OCBC Bank":"O39.SI", "Genting Sing":"G13.SI", "Venture":"V03.SI",
@@ -15,20 +19,18 @@ sti_stocks = {"CityDev":"C09.SI", "DBS":"D05.SI", "UOL":"U14.SI", "SingTel":"Z74
 				"HongkongLand USD":"H78.SI", "JSH USD":"J37.SI", "JMH USD":"J36.SI", "HPH Trust USD":"NS8U.SI", "Golden Agri-Res":"E5H.SI"}
 
 
-def main():
-	"""
-	Loops over each of the component stocks (30 of them) in the Straits Times Index, displaying information about their daily (adjusted) prices.
-
-	REQUIRES: API KEY (you can get them for free on AlphaVantage's website)
-
-	INSTRUCTIONS:
-	Set the key argument to your own unique API key value.
-	AlphaVantage limits API calls, so the program will take around 10mins to finish executing per run.
-	Original stock market data will be stored at sti_stock_data/original data.
-	
-	ts = TimeSeries(key = "", output_format = "pandas") # <--- SET API KEY HERE
-
-	ti = TechIndicators()"""
+if __name__ == "__main__":
+	initialize()
+	wrangle_data()
+	combine_data()
+	price_volume_top_pct_change_screener(screen = "price", timeframe = "daily")
+	price_volume_top_pct_change_screener(screen = "price", timeframe = "weekly")
+	price_volume_top_pct_change_screener(screen = "price", timeframe = "monthly")
+	price_volume_top_pct_change_screener(screen = "volume", timeframe = "daily")
+	price_volume_top_pct_change_screener(screen = "volume", timeframe = "weekly")
+	price_volume_top_pct_change_screener(screen = "volume", timeframe = "monthly")
+	technical_analysis_menu()
+	time.sleep(10000)
 
 
 def initialize():
@@ -70,73 +72,77 @@ def wrangle_data():
 
 	print("WRANGLING AND SAVING DATA:\n\n")
 
+	#Creates a new list for public holidays converted to datetime objects
+	sg_public_holidays_datetimes = []
+
+	#Converts public holidays from strings to datetime objects before adding to the list
+	for sg_public_holiday_date in sg_public_holidays_dates:
+		sg_public_holidays_datetimes.append(datetime.strptime(sg_public_holiday_date, "%Y-%m-%d"))
+
 	for company_name, company_ticker in sti_stocks.items():
 		time.sleep(0.1)
 		company_name_no_spaces = company_name.replace(" ", "_")
 		print ("WRANGLING AND SAVING DATA: " + company_name + " " + company_ticker + "\n")
-		df_original = pd.read_csv("sti_stock_data/original_data/" + company_name_no_spaces + ".csv")
+		#Load stock's csv file with date as index
+		df_original = pd.read_csv("sti_stock_data/original_data/" + company_name_no_spaces + ".csv", index_col = ["date"]) #, parse_dates = True
+		#Get stock's adjusted close series (previous 100 trading sessions)
+		adjusted_close = df_original[["5. adjusted close", "6. volume"]]
+		#Note: The date index currently excludes weekends and public holidays.
+		#Note: Please refer to sg_public_holidays list at the top of the file for Singapore's public holidays
+		#Include Singapore's public holidays in the date index.
 
-		#Retrieve dates (CAUTION: ESTIMATED VALUES)
-		most_recent_date = df_original.iloc[0, 0]
-		one_day_before_date = df_original.iloc[1, 0]	
-		one_week_before_date = df_original.iloc[5, 0]	#One week consists of roughly 5 trading days   (NOT EXACT)
-		one_month_before_date = df_original.iloc[20, 0] #One month consists of roughly 20 trading days (NOT EXACT)
+		#Check whether each public holiday falls within the previous 100 trading sessions' date range
+		#Get start and end dates (in strings) for the previous 100 trading sessions
+		end_date = adjusted_close.index.values[0]
+		start_date = adjusted_close.index.values[-1]
 
-		#Retrieve prices (we use adjusted closing prices)
-		most_recent_price = df_original.iloc[0, 5]
-		one_day_before_price = df_original.iloc[1, 5]
-		one_week_before_price = df_original.iloc[5, 5]
-		one_month_before_price = df_original.iloc[20, 5]
+		#Get start and end dates as datetime objects
+		end_date = datetime.strptime(end_date, "%Y-%m-%d")
+		start_date = datetime.strptime(start_date, "%Y-%m-%d")
 
-		#Retrive volume
-		most_recent_volume = df_original.iloc[0, 6]
-		one_day_before_volume = df_original.iloc[1, 6]
-		one_week_before_volume = df_original.iloc[5, 6]
-		one_month_before_volume = df_original.iloc[20, 6]
+		#Check whether each public holiday falls within date range
+		for sg_public_holidays_datetime in sg_public_holidays_datetimes:
+			#If public holiday falls within range, add public holiday to date index
+			if start_date < sg_public_holidays_datetime < end_date:
+				adjusted_close.loc[sg_public_holidays_datetime.strftime("%Y-%m-%d")] = np.nan
 
-		#Calculate price changes (again we use adjusted closing prices here)
-		one_day_price_change = most_recent_price - one_day_before_price
-		one_week_price_change = most_recent_price - one_week_before_price
-		one_month_price_change = most_recent_price - one_month_before_price
+		#Convert pandas series to dataframe
+		#adjusted_close = adjusted_close.to_frame()
 
-		#Calculate price changes in percentage terms (again we use adjusted closing prices here)
-		one_day_price_change_pct = (one_day_price_change / one_day_before_price) * 100
-		one_week_price_change_pct = (one_week_price_change / one_week_before_price) * 100
-		one_month_price_change_pct = (one_month_price_change / one_month_before_price) * 100
+		#Sort stock's adjusted close series (most recent date on top)
+		adjusted_close.sort_values(by = "date", ascending = False, inplace = True)
 
-		#Calculate volume changes
-		one_day_volume_change = most_recent_volume - one_day_before_volume
-		one_week_volume_change = most_recent_volume - one_week_before_volume
-		one_month_volume_change = most_recent_volume - one_month_before_volume
+		#Backward fill the NaN values with previous day's adjusted close price
+		adjusted_close.fillna(method = "bfill", inplace = True)
 
-		#Calculate volume changes in percentage terms
-		one_day_volume_change_pct = (one_day_volume_change / one_day_before_volume) * 100
-		one_week_volume_change_pct = (one_week_volume_change / one_week_before_volume) * 100
-		one_month_volume_change_pct = (one_month_volume_change / one_month_before_volume) * 100
+		#Calculate daily percentage change in adjusted close prices
+		adjusted_close["daily_price_pct_change"] = adjusted_close["5. adjusted close"].pct_change(periods = -1)
+		adjusted_close["daily_price_pct_change"] = adjusted_close["daily_price_pct_change"] * 100
 
-		#This dictionary contains all the basic price and volume information for an individual stock
-		simple_price_volume_changes = {"company_name_no_spaces":company_name_no_spaces,
-									   "most_recent_date":most_recent_date, "one_day_before_date":one_day_before_date,
-									   "one_week_before_date":one_week_before_date, "one_month_before_date":one_month_before_date,
-									   "most_recent_price":most_recent_price, "one_day_before_price":one_day_before_price,
-									   "one_week_before_price":one_week_before_price, "one_month_before_price":one_month_before_price,
-									   "most_recent_volume":most_recent_volume, "one_day_before_volume":one_day_before_volume,
-									   "one_week_before_volume":one_week_before_volume, "one_month_before_volume":one_month_before_volume,
-									   "one_day_price_change":one_day_price_change, "one_week_price_change":one_week_price_change,
-									   "one_month_price_change":one_month_price_change, "one_day_price_change_pct":one_day_price_change_pct,
-									   "one_week_price_change_pct":one_week_price_change_pct, "one_month_price_change_pct":one_month_price_change_pct,
-									   "one_day_volume_change":one_day_volume_change, "one_week_volume_change":one_week_volume_change,
-									   "one_month_volume_change":one_month_volume_change, "one_day_volume_change_pct":one_day_volume_change_pct,
-									   "one_week_volume_change_pct":one_week_volume_change_pct, "one_month_volume_change_pct":one_month_volume_change_pct}
+		#Calculate weekly percentage change in adjusted close prices
+		adjusted_close["weekly_price_pct_change"] = adjusted_close["5. adjusted close"].pct_change(periods = -5)
+		adjusted_close["weekly_price_pct_change"] = adjusted_close["weekly_price_pct_change"] * 100
 
-		#Converts the simple_price_volume_changes dictionary to a pandas series
-		df_simple_price_volume_changes = pd.DataFrame([simple_price_volume_changes])
-		df_simple_price_volume_changes.set_index(["company_name_no_spaces"], inplace = True)
+		#Calculate monthly percentage change in adjusted close prices
+		adjusted_close["monthly_price_pct_change"] = adjusted_close["5. adjusted close"].pct_change(periods = -20)
+		adjusted_close["monthly_price_pct_change"] = adjusted_close["monthly_price_pct_change"] * 100
 
-		#Converts the df_simple_price_volume_changes pandas series to csv and stores the csv file to sti_stock_data/wrangled_data
-		df_simple_price_volume_changes.to_csv("sti_stock_data/wrangled_data/" + company_name_no_spaces + "_wrangled.csv", mode = "w")
+		#Calculate daily percentage change in volume
+		adjusted_close["daily_volume_pct_change"] = adjusted_close["6. volume"].pct_change(periods = -1)
+		adjusted_close["daily_volume_pct_change"] = adjusted_close["daily_volume_pct_change"] * 100
 
-		print ("\nWRANGLED DATA AND SAVED: " + company_name + "\n\n")
+		#Calculate weekly percentage change in volume
+		adjusted_close["weekly_volume_pct_change"] = adjusted_close["6. volume"].pct_change(periods = -5)
+		adjusted_close["weekly_volume_pct_change"] = adjusted_close["weekly_volume_pct_change"] * 100
+
+		#Calculate monthly percentage change in volume
+		adjusted_close["monthly_volume_pct_change"] = adjusted_close["6. volume"].pct_change(periods = -20)
+		adjusted_close["monthly_volume_pct_change"] = adjusted_close["monthly_volume_pct_change"] * 100
+
+		#Stores adjusted_close series as csv file in sti_stock_data/wrangled_data
+		adjusted_close.to_csv("sti_stock_data/wrangled_data/" + company_name_no_spaces + "_wrangled.csv", mode = "w")
+
+		print ("\nWRANGLED DATA AND SAVED: " + company_name + "\n\n")		
 	
 	print("PREPARED: ALL 30 STI STOCK DATA WRANGLED AND RESULTS SAVED\n\n")
 	print("---------------------------------------------------------------\n\n")
@@ -146,49 +152,52 @@ def combine_data():
 
 	print("COMBINING DATA:\n\n")
 
-	df_simple_price_volume_changes_main = pd.DataFrame()
+	price_volume_pct_change = pd.DataFrame()
 
 	for company_name, company_ticker in sti_stocks.items():
 		company_name_no_spaces = company_name.replace(" ", "_")
 
-		#Read csv file and organise the data
-		df_simple_price_volume_changes = pd.read_csv("sti_stock_data/wrangled_data/" + company_name_no_spaces + "_wrangled.csv", index_col = 0)
-		df_simple_price_volume_changes_main = pd.concat([df_simple_price_volume_changes_main, df_simple_price_volume_changes])
+		#Read csv file and organise the stock data
+		df_wrangled = pd.read_csv("sti_stock_data/wrangled_data/" + company_name_no_spaces + "_wrangled.csv", nrows = 1)
 
-	df_simple_price_volume_changes_main.to_csv("sti_stock_data/combined_data/combined_data.csv", mode = "w")
-	pd.set_option("display.max_columns", 30)
+		#Add company name column
+		df_wrangled["company_name_no_spaces"] = company_name_no_spaces
+
+		price_volume_pct_change = pd.concat([price_volume_pct_change, df_wrangled])
+
+	price_volume_pct_change.to_csv("sti_stock_data/combined_data/combined_data.csv", mode = "w")
 	
 	print("COMBINED: ALL WRANGLED DATA COMBINED AND RESULTS SAVED\n\n")
 	print("---------------------------------------------------------------\n\n")
 
 
-def top_changes_price_volume_screener(screen = "price", timeframe = "day"):
+def price_volume_top_pct_change_screener(screen = "price", timeframe = "daily"):
 	"""
 	Keyword arguments:
-		screen: type of stock screen, supported values are: "price"
+		screen: type of stock screen, supported values are:
 			"price": filters top and bottom 5 stocks of the Straits Times Index in terms of percentage price changes
 			"volume": filters top and bottom 5 stocks of the Straits Times Index in terms of percentage volume changes
-		timeframe: sets the timeframe for the screen, supported values are: "day", "week", "month"
-			"day": timeframe set to 1 day
-			"week": timeframe set to 1 week
-			"month": timeframe set to 1 month
+		timeframe: sets the timeframe for the screen, supported values are:
+			"daily": timeframe set to 1 day
+			"weekly": timeframe set to 1 week
+			"monthly": timeframe set to 1 month
 	"""
 
 	#Filter stocks for top 5 price or volume increases and declines of the Straits Times Index depending on the timeframe set
-	df_simple_price_volume_changes_main = pd.read_csv("sti_stock_data/combined_data/combined_data.csv")
+	df_combined = pd.read_csv("sti_stock_data/combined_data/combined_data.csv")
 
-	print("TOP 5 STI STOCKS WITH HIGHEST PERCENTAGE CHANGE IN " + screen.upper() + ": (BY " + timeframe.upper() + ")\n\n")
+	print("TOP 5 STI STOCKS WITH HIGHEST PERCENTAGE CHANGE IN " + screen.upper() + ": " + timeframe.upper() + " SCREEN\n\n")
 	print("---------------------\n\n")
-	df_timeframe_change_pct_top_five = df_simple_price_volume_changes_main.nlargest(5, "one_" + timeframe +"_" + screen + "_change_pct")
-	df_timeframe_change_pct_top_five = df_timeframe_change_pct_top_five[["company_name_no_spaces", "one_" + timeframe +"_" + screen + "_change_pct"]]
-	pprint(df_timeframe_change_pct_top_five)
+	top_five = df_combined.nlargest(n = 5, columns = timeframe + "_" + screen + "_pct_change")
+	top_five = top_five[["company_name_no_spaces", timeframe +"_" + screen + "_pct_change"]]
+	pprint(top_five)
 	print("\n\n---------------------\n\n")
 
-	print("TOP 5 STI STOCKS WITH LOWEST PERCENTAGE CHANGE IN " + screen.upper() + ": (BY " + timeframe.upper() + ")\n\n")
+	print("TOP 5 STI STOCKS WITH LOWEST PERCENTAGE CHANGE IN " + screen.upper() + ": " + timeframe.upper() + " SCREEN\n\n")
 	print("---------------------\n\n")
-	df_timeframe_change_pct_bottom_five = df_simple_price_volume_changes_main.nsmallest(5, "one_" + timeframe +"_" + screen + "_change_pct")
-	df_timeframe_change_pct_bottom_five = df_timeframe_change_pct_bottom_five[["company_name_no_spaces", "one_" + timeframe +"_" + screen + "_change_pct"]]
-	pprint(df_timeframe_change_pct_bottom_five)
+	bottom_five = df_combined.nsmallest(n = 5, columns = timeframe + "_" + screen + "_pct_change")
+	bottom_five = bottom_five[["company_name_no_spaces", timeframe +"_" + screen + "_pct_change"]]
+	pprint(bottom_five)
 	print("\n\n---------------------\n\n")
 
 
@@ -595,17 +604,3 @@ def stochastic_relative_strength_index_screener(timeframe = 14, upperbound = 0.8
 	print("\n\n--------------------\n\n")
 
 	technical_analysis_menu()
-
-
-if __name__ == "__main__":
-	initialize()
-	wrangle_data()
-	combine_data()
-	top_changes_price_volume_screener(screen = "price", timeframe = "day")
-	top_changes_price_volume_screener(screen = "price", timeframe = "week")
-	top_changes_price_volume_screener(screen = "price", timeframe = "month")
-	top_changes_price_volume_screener(screen = "volume", timeframe = "day")
-	top_changes_price_volume_screener(screen = "volume", timeframe = "week")
-	top_changes_price_volume_screener(screen = "volume", timeframe = "month")
-	technical_analysis_menu()
-	time.sleep(10000)
