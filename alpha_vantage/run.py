@@ -19,20 +19,6 @@ sti_stocks = {"CityDev":"C09.SI", "DBS":"D05.SI", "UOL":"U14.SI", "SingTel":"Z74
 				"HongkongLand USD":"H78.SI", "JSH USD":"J37.SI", "JMH USD":"J36.SI", "HPH Trust USD":"NS8U.SI", "Golden Agri-Res":"E5H.SI"}
 
 
-if __name__ == "__main__":
-	initialize()
-	wrangle_data()
-	combine_data()
-	price_volume_top_pct_change_screener(screen = "price", timeframe = "daily")
-	price_volume_top_pct_change_screener(screen = "price", timeframe = "weekly")
-	price_volume_top_pct_change_screener(screen = "price", timeframe = "monthly")
-	price_volume_top_pct_change_screener(screen = "volume", timeframe = "daily")
-	price_volume_top_pct_change_screener(screen = "volume", timeframe = "weekly")
-	price_volume_top_pct_change_screener(screen = "volume", timeframe = "monthly")
-	technical_analysis_menu()
-	time.sleep(10000)
-
-
 def initialize():
 	"""Initializes the program by fetching and storing data"""
 
@@ -604,3 +590,16 @@ def stochastic_relative_strength_index_screener(timeframe = 14, upperbound = 0.8
 	print("\n\n--------------------\n\n")
 
 	technical_analysis_menu()
+
+if __name__ == "__main__":
+	initialize()
+	wrangle_data()
+	combine_data()
+	price_volume_top_pct_change_screener(screen = "price", timeframe = "daily")
+	price_volume_top_pct_change_screener(screen = "price", timeframe = "weekly")
+	price_volume_top_pct_change_screener(screen = "price", timeframe = "monthly")
+	price_volume_top_pct_change_screener(screen = "volume", timeframe = "daily")
+	price_volume_top_pct_change_screener(screen = "volume", timeframe = "weekly")
+	price_volume_top_pct_change_screener(screen = "volume", timeframe = "monthly")
+	technical_analysis_menu()
+	time.sleep(10000)
