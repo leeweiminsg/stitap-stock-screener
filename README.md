@@ -18,6 +18,8 @@ Simply put, STITAP pulls data from AlphaVantage through its API before performin
 
 If you do not already have Python IDLE installed, you can get it [here](https://www.python.org/getit/).
 
+Install [Pandas](https://pandas.pydata.org/getpandas.html) and [Numpy](https://sourceforge.net/projects/numpy/), or just download [Anaconda](https://www.anaconda.com/download/).
+
 Clone the repository by clicking the green button on the top right corner of the page.
 
 Go to the folder STI_Stock_Screener -> alpha_vantage. Run the file run.py.
