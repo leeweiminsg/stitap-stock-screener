@@ -27,7 +27,7 @@ def initialize():
 	print("-----Straits Times Index Technical Analysis Project: STITAP-----\n\n\n")
 	time.sleep(0.1)
 
-	print("-----V1.0.0-----\n\n\n")
+	print("-----V1.1-----\n\n\n")
 	time.sleep(0.1)
 
 	print("INITIALIZING: LOADING AND SAVING ALL 30 STI STOCK DATA:\n\n")
@@ -70,8 +70,8 @@ def wrangle_data():
 		company_name_no_spaces = company_name.replace(" ", "_")
 		print ("WRANGLING AND SAVING DATA: " + company_name + " " + company_ticker + "\n")
 		#Load stock's csv file with date as index
-		df_original = pd.read_csv("sti_stock_data/original_data/" + company_name_no_spaces + ".csv", index_col = ["date"]) #, parse_dates = True
-		#Get stock's adjusted close series (previous 100 trading sessions)
+		df_original = pd.read_csv("sti_stock_data/original_data/" + company_name_no_spaces + ".csv", index_col = ["date"])
+		#Get stock's adjusted close and volume (previous 100 trading sessions)
 		adjusted_close = df_original[["5. adjusted close", "6. volume"]]
 		#Note: The date index currently excludes weekends and public holidays.
 		#Note: Please refer to sg_public_holidays list at the top of the file for Singapore's public holidays
@@ -193,7 +193,7 @@ def technical_analysis_menu():
 	Requires user input.
 	"""
 
-	print("----------STI TECHNICAL ANALYSIS SCREENER----------\n\n")
+	print("----------STITAP TECHNICAL ANALYSIS SCREENER----------\n\n")
 	time.sleep(0.1)
 
 	print("-----CURRENTLY SUPPORTS 3 TECHNICAL SCREENS-----\n\n")
@@ -253,8 +253,6 @@ def validate_input(prompt, input_type = None, input_range = None):
 			return input_type(user_input)
 
 
-
-
 def technical_analysis_screener(screen):
 	"""
 	Identifies and flags out stocks with extreme and/or unusual values based on the type of technical screen.
@@ -270,14 +268,21 @@ def technical_analysis_screener(screen):
 									"RSI":relative_strength_index_screener,
 									"STOCHRSI":relative_strength_index_screener}
 
-	print("SETTINGS FOR " + screen + ":")
+	print("----------SETTINGS FOR " + screen + ":----------\n\n")
+	time.sleep(0.1)
 
+	print("ABOUT " + screen + " SCREEN:\n\n")
+	time.sleep(0.1)
 
 	if screen == "STOCHRSI":
-
-		timeframe_i = validate_input("Please enter your desired timeframe:", input_type = int, input_range = range(2, 50))
+		print("TIMEFRAMES SUPPORTED: 2 - 49 DAYS\n\n")
 		time.sleep(0.1)
-		
+
+		print("OVERBOUGHT AND OVERSOLD VALUES FIXED AT 0.8 AND 0.2 RESPECTIVELY\n\n")
+		time.sleep(0.1)
+
+		timeframe_i = validate_input("Please enter your desired timeframe (in days):", input_type = int, input_range = range(2, 50))
+		time.sleep(0.1)		
 		"""
 		Below code is not supported. Range() does not support floating point numbers. Will fix in future.
 
@@ -285,17 +290,23 @@ def technical_analysis_screener(screen):
 		time.sleep(0.1)
 		
 		lowerbound_i = validate_input("Please enter your desired RSI oversold value:", input_type = int, input_range = range(0, 31))
-		time.sleep(0.1)"""
-		
+		time.sleep(0.1)"""		
 		stochastic_relative_strength_index_screener(timeframe = timeframe_i, upperbound = 0.8, lowerbound = 0.2)
 
 	elif screen == "MACD":
-
 		moving_average_convergence_divergence_screener()
 
 	elif screen == "RSI":
+		print("TIMEFRAMES SUPPORTED: 2 - 99 DAYS\n\n")
+		time.sleep(0.1)
 
-		timeframe_i = validate_input("Please enter your desired timeframe:", input_type = int, input_range = range(2, 100))
+		print("OVERBOUGHT VALUES SUPPORTED: 70 - 100\n\n")
+		time.sleep(0.1)
+
+		print("OVERSOLD VALUES SUPPORTED: 0 - 30\n\n")
+		time.sleep(0.1)	
+
+		timeframe_i = validate_input("Please enter your desired timeframe (in days):", input_type = int, input_range = range(2, 100))
 		time.sleep(0.1)
 
 		upperbound_i = validate_input("Please enter your desired overbought value (70 - 100):", input_type = int, input_range = range(70, 101))
@@ -307,7 +318,6 @@ def technical_analysis_screener(screen):
 		relative_strength_index_screener(timeframe = timeframe_i, upperbound = upperbound_i, lowerbound = lowerbound_i)
 
 	else:
-
 		return
 
 
@@ -388,7 +398,7 @@ def relative_strength_index_screener(timeframe = 14, upperbound = 70, lowerbound
 	"""
 	Relative Strength Index screener
 	Keyword Arguments (set by user during runtime):
-		timeframe: Sets the timeframe (number of trading sessions) (daily) for RSI screen. Supported values are between 2 and 100 (inclusive) atm.
+		timeframe: Sets the timeframe (number of trading sessions) (daily) for RSI screen. Supported values are between 2 and 99 atm.
 		upperbound: Sets the rsi value such that any stock with rsi >= upperbound is considered overbought. Supported values are between 70 and 100 (inclusive).
 		lowerbound: Sets the rsi value such that any stock with rsi <= lowerbound is considered oversold. Supported values are between 0 and 30 (inclusive).
 	"""
@@ -414,67 +424,105 @@ def relative_strength_index_screener(timeframe = 14, upperbound = 70, lowerbound
 	for company_name, company_ticker in sti_stocks.items():
 		company_name_no_spaces = company_name.replace(" ", "_")
 
-		#Read csv file
-		df_original = pd.read_csv("sti_stock_data/original_data/" + company_name_no_spaces + ".csv", index_col = 0)
+		#Load stock's csv file with date as index
+		df_original = pd.read_csv("sti_stock_data/original_data/" + company_name_no_spaces + ".csv", index_col = ["date"])
 
-		#Prepare pandas series for calculations
-		df_technical_timeframe = df_original.head(timeframe + 1)
-		df_technical_timeframe_adjusted_close = df_technical_timeframe["5. adjusted close"]
-		
-		#Calculate daily price changes
-		df_technical_timeframe_price_change = df_technical_timeframe_adjusted_close.diff(periods = -1)
-		
-		#Remove last row which has NA value
-		df_technical_timeframe_price_change_cleaned = df_technical_timeframe_price_change[:-1]
-		
-		#Prepare two pandas series: one only for price increases and another for declines
-		df_technical_timeframe_price_change_cleaned_up = df_technical_timeframe_price_change_cleaned.copy()
-		df_technical_timeframe_price_change_cleaned_down = df_technical_timeframe_price_change_cleaned.copy()
+		#Get stock's adjusted close series (previous 100 trading sessions)
+		df_rsi = df_original[["5. adjusted close"]]
 
-		df_technical_timeframe_price_change_cleaned_up[df_technical_timeframe_price_change_cleaned_up < 0] = 0
-		df_technical_timeframe_price_change_cleaned_down[df_technical_timeframe_price_change_cleaned_down > 0] = 0
+		#Calculate stock's daily adjusted close changes
+		df_rsi["daily_price_change"] = df_rsi["5. adjusted close"].diff(periods = -1)
+
+		#Remove last row due which has NaN value
+		df_rsi = df_rsi[:-1]	
+
+		#Reverse dataframe
+		df_rsi.sort_values(by = ["date"], inplace = True)
+
+		#Get two copies of daily_price_change dataframe for filtering values
+		df_rsi_up = df_rsi["daily_price_change"]
+		df_rsi_down = df_rsi["daily_price_change"]
+
+		#Filter the gains and losses in each copy
+		df_rsi_up = df_rsi_up.apply(lambda x: 0 if x < 0 else x)
+		df_rsi_down = df_rsi_down.apply(lambda x: 0 if x > 0 else x)
+
+		#Merge dataframes
+		df_rsi["daily_price_increase"] = df_rsi_up
+		df_rsi["daily_price_decrease"] = df_rsi_down
 
 		#Calculate average gain and loss over the specified timeframe
-		df_technical_timeframe_price_change_cleaned_up_rolling_mean = df_technical_timeframe_price_change_cleaned_up.rolling(timeframe).mean()[-1]
-		df_technical_timeframe_price_change_cleaned_down_rolling_mean = df_technical_timeframe_price_change_cleaned_down.abs().rolling(timeframe).mean()[-1]
-		
-		rsi_timeframe_relative_strength = df_technical_timeframe_price_change_cleaned_up_rolling_mean / df_technical_timeframe_price_change_cleaned_down_rolling_mean
+		df_rsi_up_rolling_mean = df_rsi_up.rolling(window = timeframe).mean()
+		df_rsi_down_rolling_mean = df_rsi_down.abs().rolling(window = timeframe).mean()
 
-		rsi_timeframe = 100 - (100 / (1 + rsi_timeframe_relative_strength))
+		#Merge into main fataframe
+		df_rsi["daily_price_increase_rolling_mean"] = df_rsi_up_rolling_mean
+		df_rsi["daily_price_decrease_rolling_mean"] = df_rsi_down_rolling_mean
 
-		rsi_timeframe_decimal = round(decimal.Decimal(rsi_timeframe), 2)
+		#Remove first thirteen rows which have NaN values
+		df_rsi = df_rsi[13:]
 
-		if rsi_timeframe_decimal >= upperbound:
-			rsi_overbought[company_name] = rsi_timeframe_decimal
-		elif rsi_timeframe_decimal <= lowerbound:
-			rsi_oversold[company_name] = rsi_timeframe_decimal
+		#Get subset of dataframe depending on the timeframe
+		df_rsi = df_rsi[-timeframe:]
+
+		#Shift daily_price_increase_rolling_mean and daily_price_decrease_rolling_mean columns down by 1 row for rest of relative strength calculations
+		df_rsi["daily_price_increase_rolling_mean_calc"] = df_rsi["daily_price_increase_rolling_mean"].shift(1)
+		df_rsi["daily_price_decrease_rolling_mean_calc"] = df_rsi["daily_price_decrease_rolling_mean"].shift(1)
+
+		#Calculate average price increase / decrease for rest of the rows
+		df_rsi["daily_price_average_increase"] = ((df_rsi["daily_price_increase_rolling_mean_calc"] * 13) + df_rsi["daily_price_increase"]) / 14
+		df_rsi["daily_price_average_decrease"] = ((df_rsi["daily_price_decrease_rolling_mean_calc"] * 13) + df_rsi["daily_price_decrease"]) / 14
+
+		#Calculate average price increase / decrease for first row
+		df_rsi.iloc[0, 8] = df_rsi.iloc[0, 4] / 14
+		df_rsi.iloc[0, 9] = df_rsi.iloc[0, 5] / 14
+
+		#Calculate relative strength
+		df_rsi["relative_strength"] = df_rsi["daily_price_average_increase"] / df_rsi["daily_price_average_decrease"]
+
+		#Calculate relative strength index
+		df_rsi["relative_strength_index"] = 100 - (100 / (1 + df_rsi["relative_strength"]))
+
+		#Convert to two decimal places
+		df_rsi["relative_strength_index"] = df_rsi["relative_strength_index"].round(decimals = 2)
+
+		#Get the current day's rsi value
+		rsi = df_rsi.iloc[-1, 11]
+
+		#Classify rsi values accordingly
+		if rsi >= upperbound:
+			rsi_overbought[company_name] = rsi
+		elif rsi <= lowerbound:
+			rsi_oversold[company_name] = rsi
 		else:
-			rsi_neutral[company_name] = rsi_timeframe_decimal
+			rsi_neutral[company_name] = rsi
 
 	#Sort results
 	rsi_overbought_sorted = sorted(rsi_overbought.items(), key = lambda x: x[1], reverse = True)
 	rsi_neutral_sorted = sorted(rsi_neutral.items(), key = lambda x: x[1], reverse = True)
-	rsi_oversold_sorted = sorted(rsi_oversold.items(), key = lambda x: x[1])
+	rsi_oversold_sorted = sorted(rsi_oversold.items(), key = lambda x: x[1])	
+
+	#Convert results to dataframes
+	df_rsi_overbought = pd.DataFrame(rsi_overbought_sorted, columns = ["Company", "Relative Strength Index"])
+	df_rsi_neutral = pd.DataFrame(rsi_neutral_sorted, columns = ["Company", "Relative Strength Index"])
+	df_rsi_oversold = pd.DataFrame(rsi_oversold_sorted, columns = ["Company", "Relative Strength Index"])
 
 	print("----------RSI SCREEN RESULTS----------\n\n")
 	time.sleep(0.1)
 	print("-----OVERBOUGHT-----\n\n")
 	time.sleep(0.1)
 
-	df_rsi_overbought_sorted = pd.DataFrame(rsi_overbought_sorted, columns = ["Company", "Relative Strength Index"])
-	pprint(df_rsi_overbought_sorted)
+	pprint(df_rsi_overbought)
 
 	print("\n\n-----NEUTRAL-----\n\n")
 	time.sleep(0.1)
 
-	df_rsi_neutral_sorted = pd.DataFrame(rsi_neutral_sorted, columns = ["Company", "Relative Strength Index"])
-	pprint(df_rsi_neutral_sorted)
+	pprint(df_rsi_neutral)
 
 	print("\n\n-----OVERSOLD-----\n\n")
 	time.sleep(0.1)
 
-	df_rsi_oversold_sorted = pd.DataFrame(rsi_oversold_sorted, columns = ["Company", "Relative Strength Index"])
-	pprint(df_rsi_oversold_sorted)
+	pprint(df_rsi_oversold)
 
 	print("\n\n--------------------\n\n")
 
