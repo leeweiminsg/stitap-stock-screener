@@ -92,6 +92,7 @@ You can get in touch with me through my [website](http://www.leeweimin.com/conta
 * Reduce code repetition (*Done*)
 * Add more technical indicators
 * Set up a database and server
+* Introduce backtesting
 
 ## Star if you like it.
 If you enjoyed using this, do show your support by starring it!
