@@ -19,39 +19,61 @@ sti_stocks = {"CityDev":"C09.SI", "DBS":"D05.SI", "UOL":"U14.SI", "SingTel":"Z74
 				"HongkongLand USD":"H78.SI", "JSH USD":"J37.SI", "JMH USD":"J36.SI", "HPH Trust USD":"NS8U.SI", "Golden Agri-Res":"E5H.SI"}
 
 
-def initialize():
-	"""Initializes the program by fetching and storing data"""
+def initialize(backtest = None):
+	"""Initializes the program by fetching and storing data
+	Keyword arguments:
+		backtest: Initializes program for backtesting if value is not None
+			None: Initializes screener
+			"daily": Initializes backtest (daily timeframe)
+			"weekly": Initializes backtest (weekly timeframe)
+			"monthly": Initializes backtest (monthly timeframe)
+	"""
 
 	ts = TimeSeries(key = "", output_format = "pandas") # <--- SET API KEY HERE
 
-	print("-----Straits Times Index Technical Analysis Project: STITAP-----\n\n\n")
+	print("-----Straits Times Index Technical Analysis Project: STITAP-----", end = "\n"*3)
 	time.sleep(0.1)
 
-	print("-----V1.1-----\n\n\n")
+	print("-----V1.1-----", end = "\n"*3)
 	time.sleep(0.1)
 
-	print("INITIALIZING: LOADING AND SAVING ALL 30 STI STOCK DATA:\n\n")
+	print(f"INITIALIZING: LOADING AND SAVING ALL 30 STI STOCK DATA (backtest = {backtest}):", end = "\n"*3)
 	time.sleep(0.1)
 
 	for company_name, company_ticker in sti_stocks.items():
 		time.sleep(0.1)
-		print ("LOADING: " + company_name + " " + company_ticker + "\n")
+		print (f"LOADING: {company_name} {company_ticker}", end = "\n"*2)
 		company_name_no_spaces = company_name.replace(" ", "_")
 		time.sleep(60) # <--- Adjust the duration (No. of seconds) of waiting time between each API call here
-		
-		#Makes API call
-		data, meta_data  = ts.get_daily_adjusted(symbol = company_ticker)
+
+		#Initializes program according to value of backtest argument
+		if backtest is None:
+			#Makes API call
+			data, meta_data  = ts.get_daily_adjusted(symbol = company_ticker)
+
+		elif backtest == "daily":
+			data, meta_data  = ts.get_daily_adjusted(symbol = company_ticker, outputsize = "full")
+
+		elif backtest == "weekly":
+			data, meta_data  = ts.get_weekly_adjusted(symbol = company_ticker)
+
+		elif backtest == "monthly":
+			data, meta_data  = ts.get_monthly_adjusted(symbol = company_ticker)
 
 		#Sorts the resulting data pandas object in order of recency (latest date on top)
 		data.sort_index(ascending = False, inplace = True)
-		
-		#Stores the csv file to sti_stock_data/original_data
-		data.to_csv("sti_stock_data/original_data/" + company_name_no_spaces + ".csv", mode = "w")
-		
-		print ("\nLOADED AND SAVED: " + company_name + "\n\n")
 
-	print("INITIALIZED: ALL 30 STI STOCK DATA LOADED AND SAVED\n\n")
-	print("---------------------------------------------------------------\n\n")
+		if backtest is None:
+			#Stores the csv file to sti_stock_data/original_data
+			data.to_csv(f"sti_stock_data/original_data/{company_name_no_spaces}.csv", mode = "w")
+
+		else:
+			data.to_csv(f"sti_stock_data/backtest_data/{backtest}/{company_name_no_spaces}.csv", mode = "w")
+		
+		print (f"LOADED AND SAVED: {company_name}", end = "\n"*2)
+
+	print(f"INITIALIZED: ALL 30 STI STOCK DATA LOADED AND SAVED (backtest = {backtest})", end = "\n"*2)
+	print("-"*20, end = "\n"*2)
 
 
 def wrangle_data():
