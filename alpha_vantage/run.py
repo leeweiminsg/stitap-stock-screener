@@ -1,10 +1,12 @@
 import time
 from datetime import datetime
-import decimal
 import json
+import decimal
+from pprint import pprint
+
 import pandas as pd
 import numpy as np
-from pprint import pprint
+
 from alpha_vantage.timeseries import TimeSeries
 from alpha_vantage.techindicators import TechIndicators
 
