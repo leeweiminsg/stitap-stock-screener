@@ -10,8 +10,9 @@ import numpy as np
 from alpha_vantage.timeseries import TimeSeries
 from alpha_vantage.techindicators import TechIndicators
 
+
 sg_public_holidays_dates = ["2018-01-01", "2018-02-16", "2018-02-17", "2018-03-30", "2018-05-01", "2018-05-29",
-					  "2018-06-15", "2018-08-09", "2018-08-22", "2018-11-06", "2018-12-25"]
+					  		"2018-06-15", "2018-08-09", "2018-08-22", "2018-11-06", "2018-12-25"]
 
 sti_stocks = {"CityDev":"C09.SI", "DBS":"D05.SI", "UOL":"U14.SI", "SingTel":"Z74.SI", "UOB":"U11.SI",
 				"Keppel Corp":"BN4.SI", "CapitaLand":"C31.SI", "OCBC Bank":"O39.SI", "Genting Sing":"G13.SI", "Venture":"V03.SI",
