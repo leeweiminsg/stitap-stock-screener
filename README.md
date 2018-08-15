@@ -100,7 +100,7 @@ You can get in touch with me through my [website](http://www.leeweimin.com/conta
 
 ## TODOs:
 * Improve accuracy of technical indicators (*Done*)
-* Reduce code repetition (*Done*)
+* Reduce code repetition (*Priority*)
 * Add more technical indicators
 * Set up a database and server
 * Introduce backtesting
