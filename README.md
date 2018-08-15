@@ -28,13 +28,20 @@ Go to the folder STI_Stock_Screener -> alpha_vantage. Run the file run.py.
 
 Get your free AlphaVantage API key [here](https://www.alphavantage.co/support/#api-key).
 
-In run.py, set the key argument to your API key value:
+In run.py, set the key argument to your API key value in the Initializer class:
 
 ```python
-def initialize():
-	"""Initializes the program by fetching and storing data"""
+class Initializer(ABC):
+	"""Abstract base class for initializing the program
+	"""
+	def __init__(self, timeframe="daily"):
+		"""Initializes the class by creating a new TimeSeries object
 
-	ts = TimeSeries(key = "", output_format = "pandas") # <--- SET API KEY HERE
+		Keyword Arguments:
+			timeframe: timeframe for backtest. Supported values are "daily", "weekly" and "monthly" (default "daily")
+		"""
+		self._ts = TimeSeries(key="", output_format="pandas") # <--- SET API KEY HERE
+		self._timeframe = timeframe
 ```
 
 Run run.py. Enjoy!
@@ -43,14 +50,18 @@ Run run.py. Enjoy!
 
 *Do note that AlphaVantage limits the frequency of API calls*
 
-You can adjust the frequency of API calls in the initialize() function:
+You can adjust the frequency of API calls in the \_loop() method in the Initializer class:
 
 ```python
-for company_name, company_ticker in sti_stocks.items():
-		time.sleep(0.1)
-		print ("LOADING: " + company_name + " " + company_ticker + "\n")
-		company_name_no_spaces = company_name.replace(" ", "_")
-		time.sleep(60) # <--- Adjust the duration (No. of seconds) of waiting time between each API call here
+def _loop(self):
+		"""Loops over each stock, using the _fetch_store() method to fetch and store each stock's data
+		"""
+		for stock_name, stock_ticker in sti_stocks.items():
+			time.sleep(0.1)
+			print (f"LOADING: {stock_name} {stock_ticker}", end="\n"*2)
+			stock_name_no_spaces = stock_name.replace(" ", "_")
+			time.sleep(60) # <--- Adjust the duration (No. of seconds) of waiting time between each API call here
+			self._fetch_store(stock_name_no_spaces, stock_ticker, self._timeframe)
 ```
 
 ## Features
