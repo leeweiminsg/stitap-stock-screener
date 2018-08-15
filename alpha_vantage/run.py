@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import time
 from datetime import datetime
 import json
@@ -22,61 +23,133 @@ sti_stocks = {"CityDev":"C09.SI", "DBS":"D05.SI", "UOL":"U14.SI", "SingTel":"Z74
 				"HongkongLand USD":"H78.SI", "JSH USD":"J37.SI", "JMH USD":"J36.SI", "HPH Trust USD":"NS8U.SI", "Golden Agri-Res":"E5H.SI"}
 
 
-def initialize(backtest = None):
-	"""Initializes the program by fetching and storing data
-	Keyword arguments:
-		backtest: Initializes program for backtesting if value is not None
-			None: Initializes screener
-			"daily": Initializes backtest (daily timeframe)
-			"weekly": Initializes backtest (weekly timeframe)
-			"monthly": Initializes backtest (monthly timeframe)
+class Initializer(ABC):
+	"""Abstract base class for initializing the program
 	"""
+	def __init__(self, timeframe="daily"):
+		"""Initializes the class by creating a new TimeSeries object 
 
-	ts = TimeSeries(key = "", output_format = "pandas") # <--- SET API KEY HERE
+		Keyword Arguments:
+			timeframe: timeframe for backtest. Supported values are "daily", "weekly" and "monthly" (default "daily")
+		"""
+		self._ts = TimeSeries(key="", output_format="pandas") # <--- SET API KEY HERE
+		self._timeframe = timeframe
 
-	print("-----Straits Times Index Technical Analysis Project: STITAP-----", end = "\n"*3)
-	time.sleep(0.1)
+	@property
+	def timeframe(self):
+		return _timeframe
 
-	print("-----V1.1-----", end = "\n"*3)
-	time.sleep(0.1)
+	@timeframe.setter
+	def timeframe(self, timeframe):
+		self._timeframe = timeframe
 
-	print(f"INITIALIZING: LOADING AND SAVING ALL 30 STI STOCK DATA (backtest = {backtest}):", end = "\n"*3)
-	time.sleep(0.1)
-
-	for company_name, company_ticker in sti_stocks.items():
+	def _start(self):
+		"""Prints the introduction to the program
+		"""
+		print("-----Straits Times Index Technical Analysis Project: STITAP-----", end="\n"*3)
 		time.sleep(0.1)
-		print (f"LOADING: {company_name} {company_ticker}", end = "\n"*2)
-		company_name_no_spaces = company_name.replace(" ", "_")
-		time.sleep(60) # <--- Adjust the duration (No. of seconds) of waiting time between each API call here
+		print("-----V1.1-----", end="\n"*3)
+		time.sleep(0.1)
 
-		#Initializes program according to value of backtest argument
-		if backtest is None:
-			#Makes API call
-			data, meta_data  = ts.get_daily_adjusted(symbol = company_ticker)
+	def _loop(self):
+		"""Loops over each stock, using the _fetch_store() method to fetch and store each stock's data
+		"""
+		for stock_name, stock_ticker in sti_stocks.items():
+			time.sleep(0.1)
+			print (f"LOADING: {stock_name} {stock_ticker}", end="\n"*2)
+			stock_name_no_spaces = stock_name.replace(" ", "_")
+			time.sleep(60)
+			self._fetch_store(stock_name_no_spaces, stock_ticker, self._timeframe)
 
-		elif backtest == "daily":
-			data, meta_data  = ts.get_daily_adjusted(symbol = company_ticker, outputsize = "full")
+	@abstractmethod		
+	def _fetch_store(self, stock_name_no_spaces, stock_ticker, timeframe="daily"):
+		"""Fetches and stores a stock's data
 
-		elif backtest == "weekly":
-			data, meta_data  = ts.get_weekly_adjusted(symbol = company_ticker)
+		Positional Arguments:
+			stock_name_no_spaces: stock's name (without spaces)
+			stock_ticker: stock's ticker
 
-		elif backtest == "monthly":
-			data, meta_data  = ts.get_monthly_adjusted(symbol = company_ticker)
+		Keyword Arguments:
+			timeframe: timeframe for screener. Supported values are "daily", "weekly" and "monthly" (default "daily")
+		"""
+		pass
 
-		#Sorts the resulting data pandas object in order of recency (latest date on top)
-		data.sort_index(ascending = False, inplace = True)
+	def _end(self):
+		"""Prints the end of the initializing process
+		"""
+		print("INITIALIZED: ALL 30 STI STOCK DATA LOADED AND SAVED", end="\n"*2)
+		print("-"*20, end="\n"*2)
 
-		if backtest is None:
-			#Stores the csv file to sti_stock_data/original_data
-			data.to_csv(f"sti_stock_data/original_data/{company_name_no_spaces}.csv", mode = "w")
+	def initialize(self):
+		"""Initializes program
+		"""
+		self._start()
+		self._loop()
+		self._end()
 
-		else:
-			data.to_csv(f"sti_stock_data/backtest_data/{backtest}/{company_name_no_spaces}.csv", mode = "w")
-		
-		print (f"LOADED AND SAVED: {company_name}", end = "\n"*2)
 
-	print(f"INITIALIZED: ALL 30 STI STOCK DATA LOADED AND SAVED (backtest = {backtest})", end = "\n"*2)
-	print("-"*20, end = "\n"*2)
+class ScreenInitializer(Initializer):
+	def __init__(self, timeframe="daily"):
+		"""Initializes the screener
+
+		Keyword Arguments:
+			timeframe: timeframe for screener. Supported values are "daily", "weekly" and "monthly" (default "daily")
+		"""
+		super().__init__(timeframe)
+
+	def _fetch_store(self, stock_name_no_spaces, stock_ticker, timeframe="daily"):
+		"""Fetches and stores a stock's data
+
+		Positional Arguments:
+			stock_name_no_spaces: stock's name (without spaces)
+			stock_ticker: stock's ticker
+
+		Keyword Arguments:
+			timeframe: timeframe for screener. Supported values are "daily", "weekly" and "monthly" (default "daily")
+		"""
+		if timeframe == "daily":
+			data, _ = self._ts.get_daily_adjusted(symbol=stock_ticker)
+		elif timeframe == "weekly":
+			data, _ = self._ts.get_weekly_adjusted(symbol=stock_ticker)
+		elif timeframe == "monthly":
+			data, _ = self._ts.get_monthly_adjusted(symbol=stock_ticker)
+
+		# Sorts the data dataframe in order of recency (latest date on top)
+		data.sort_index(ascending=False, inplace=True)
+		# Stores the data dataframe as csv in sti_stock_data/original_data
+		data.to_csv(f"sti_stock_data/original_data/{timeframe}/{stock_name_no_spaces}.csv", mode="w")
+
+
+class BacktestInitializer(Initializer):
+	def __init__(self, timeframe="daily"):
+		"""Initializes the backtest
+
+		Keyword Arguments:
+			timeframe: timeframe for backtest. Supported values are "daily", "weekly" and "monthly" (default "daily")
+		"""
+		super().__init__(timeframe)
+
+	def _fetch_store(self, stock_name_no_spaces, stock_ticker, timeframe="daily"):
+		"""Fetches and stores a stock's data
+
+		Positional Arguments:
+			stock_name_no_spaces: stock's name (without spaces)
+			stock_ticker: stock's ticker
+
+		Keyword Arguments:
+			timeframe: timeframe for screener. Supported values are "daily", "weekly" and "monthly" (default "daily")
+		"""
+		if timeframe == "daily":
+			data, _ = self._ts.get_daily_adjusted(symbol=stock_ticker, outputsize="full")
+		elif timeframe == "weekly":
+			data, _ = self._ts.get_weekly_adjusted(symbol=stock_ticker)
+		elif timeframe == "monthly":
+			data, _ = self._ts.get_monthly_adjusted(symbol=stock_ticker)
+
+		# Sorts the data dataframe in order of recency (latest date on top)
+		data.sort_index(ascending=False, inplace=True)
+		# Stores the data dataframe as csv in sti_stock_data/backtest_data
+		data.to_csv(f"sti_stock_data/backtest_data/{timeframe}/{stock_name_no_spaces}.csv", mode = "w")
 
 
 def wrangle_data():
@@ -701,8 +774,13 @@ def stochastic_relative_strength_index_screener(timeframe = 14, upperbound = 0.8
 
 
 if __name__ == "__main__":
-	initialize()
-	wrangle_data()
+	binitializer = BacktestInitializer()
+	binitializer.initialize()
+	binitializer.timeframe = "weekly"
+	binitializer.initialize()
+	binitializer.timeframe = "monthly"
+	binitializer.initialize()
+	"""wrangle_data()
 	combine_data()
 	price_volume_top_pct_change_screener(screen = "price", timeframe = "daily")
 	price_volume_top_pct_change_screener(screen = "price", timeframe = "weekly")
@@ -710,5 +788,5 @@ if __name__ == "__main__":
 	price_volume_top_pct_change_screener(screen = "volume", timeframe = "daily")
 	price_volume_top_pct_change_screener(screen = "volume", timeframe = "weekly")
 	price_volume_top_pct_change_screener(screen = "volume", timeframe = "monthly")
-	technical_analysis_menu()
+	technical_analysis_menu()"""
 	time.sleep(10000)
