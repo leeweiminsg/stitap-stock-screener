@@ -241,12 +241,8 @@ class Wrangler():
 
 		for stock_name, stock_ticker in sti_stocks.items():
 			stock_name_no_spaces = stock_name.replace(" ", "_")
-			# Read csv file and organise the stock data
 			df_wrangled = pd.read_csv(f"sti_stock_data/wrangled_data/{stock_name_no_spaces}_wrangled.csv", nrows=1)
-
-			#Add company name column
 			df_wrangled["stock_name_no_spaces"] = stock_name_no_spaces
-
 			price_volume_pct_change = pd.concat([price_volume_pct_change, df_wrangled])
 
 		price_volume_pct_change.to_csv("sti_stock_data/combined_data/combined_data.csv", mode="w")
@@ -255,43 +251,56 @@ class Wrangler():
 		print("-"*20, end="\n"*2)
 
 
-def technical_analysis_menu():
+class TechnicalAnalysisMenu:
+	"""Displays technical analysis menu
 	"""
-	Displays menu for technical screen.
-	Requires user input.
-	"""
+	def __init__(self):
+		self._technical_analysis_screens = {"Moving Average Convergence / Divergence":"MACD",
+											"Relative Strength Index":"RSI",
+											"Stochastic Relative Strength Index":"STOCHRSI"}
+		self._screen = None
 
-	print("----------STITAP TECHNICAL ANALYSIS SCREENER----------\n\n")
-	time.sleep(0.1)
+	@property
+	def screen(self):
+		return self._screen
 
-	print("-----CURRENTLY SUPPORTS 3 TECHNICAL SCREENS-----\n\n")
-	time.sleep(0.1)
+	@screen.setter
+	def screen(self, screen):
+		self._screen = screen
 
-	print("-----MORE IN THE FUTURE-----\n\n")
-	time.sleep(0.1)
+	def _start(self):
+		"""Prints the menu
+		"""
+		print("-----Straits Times Index Technical Analysis Screener-----", end="\n"*3)
+		time.sleep(0.1)
+		print("Please enter your desired technical analysis screener below (the symbol to the right) in UPPERCASE:", end="\n"*3)
+		time.sleep(0.1)
+		print("Moving Average Convergence / Divergence - MACD",
+			"Relative Strength Index - RSI",
+			"Stochastic Relative Strength Index - STOCHRSI", sep="\n", end="\n"*3)
 
-	print("Please enter your desired technical analysis screener below (the symbol to the right) in UPPERCASE:\n\n")
-	time.sleep(0.1)
+	def _input(self):
+		"""Collects input from the user and runs selected technical analysis screen
+		"""
+		while True:
+			self.screen = input()
 
-	technical_analysis_screens = {"Moving Average Convergence / Divergence":"MACD",
-								  "Relative Strength Index":"RSI", "Stochastic Relative Strength Index":"STOCHRSI"}
-	
-	while True:
+			if self.screen in self._technical_analysis_screens.values():
+				time.sleep(0.1)
+				print(f"\n\n\n{self.screen} SELECTED", end="\n"*3)
+				time.sleep(0.1)
+				break
 
-		screen = input("Moving Average Convergence / Divergence - MACD\n\n" + \
-					   "Relative Strength Index - RSI\n\n" + \
-					   "Stochastic Relative Strength Index - STOCHRSI\n\n")
+			else:
+				print(f"\n\n\n{self.screen} is invalid input. Please try again.", end="\n"*3)
+		
+		technical_analysis_screener(self.screen)
 
-		if screen in technical_analysis_screens.values():
-			time.sleep(0.1)
-			print("\n\n" + screen + " SELECTED.\n\n")
-			time.sleep(0.1)
-			break
-
-		else:
-			print("\n\nInvalid input. Please try again.\n\n")
-
-	technical_analysis_screener(screen)
+	def run(self):
+		"""Runs technical analysis menu
+		"""
+		self._start()
+		self._input()
 
 
 def validate_input(prompt, input_type = None, input_range = None):
@@ -753,5 +762,6 @@ if __name__ == "__main__":
 	top_volume_pct_change_screen = TopVolumePctChangeScreen(timeframe="daily", n=5)
 	top_price_pct_change_screen.run()
 	top_volume_pct_change_screen.run()
-	technical_analysis_menu()
+	ta_menu = TechnicalAnalysisMenu()
+	ta_menu.run()
 	time.sleep(10000)
