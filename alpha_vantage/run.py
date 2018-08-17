@@ -10,6 +10,7 @@ import numpy as np
 
 from alpha_vantage.timeseries import TimeSeries
 from alpha_vantage.techindicators import TechIndicators
+from stitap_screens import TopPricePctChangeScreen, TopVolumePctChangeScreen
 
 
 sg_public_holidays_dates = ["2018-01-01", "2018-02-16", "2018-03-30", "2018-05-01", "2018-05-29",
@@ -37,7 +38,7 @@ class Initializer(ABC):
 
 	@property
 	def timeframe(self):
-		return _timeframe
+		return self._timeframe
 
 	@timeframe.setter
 	def timeframe(self, timeframe):
@@ -218,8 +219,8 @@ class Wrangler():
 
 			# Calculates percentage change for each period for both price and volume
 			self._df_pct_change(df=adjusted_close,
-								result_columns=["daily_price_pct_change", "weekly_price_pct_change", "monthly_price_pct_change",
-								"daily_volume_pct_change", "weekly_volume_pct_change", "monthly_volume_pct_change"],
+								result_columns=["price_daily_pct_change", "price_weekly_pct_change", "price_monthly_pct_change",
+								"volume_daily_pct_change", "volume_weekly_pct_change", "volume_monthly_pct_change"],
 								input_columns=["adjusted_close", "volume"],
 								periods=[-1, -5, -20])
 
@@ -252,36 +253,6 @@ class Wrangler():
 		
 		print("COMBINED: ALL WRANGLED DATA COMBINED AND RESULTS SAVED", end="\n"*2)
 		print("-"*20, end="\n"*2)
-
-
-def price_volume_top_pct_change_screener(screen = "price", timeframe = "daily"):
-	"""
-	Keyword arguments:
-		screen: type of stock screen, supported values are:
-			"price": filters top and bottom 5 stocks of the Straits Times Index in terms of percentage price changes
-			"volume": filters top and bottom 5 stocks of the Straits Times Index in terms of percentage volume changes
-		timeframe: sets the timeframe for the screen, supported values are:
-			"daily": timeframe set to 1 day
-			"weekly": timeframe set to 1 week
-			"monthly": timeframe set to 1 month
-	"""
-
-	#Filter stocks for top 5 price or volume increases and declines of the Straits Times Index depending on the timeframe set
-	df_combined = pd.read_csv("sti_stock_data/combined_data/combined_data.csv")
-
-	print("TOP 5 STI STOCKS WITH HIGHEST PERCENTAGE CHANGE IN " + screen.upper() + ": " + timeframe.upper() + " SCREEN\n\n")
-	print("---------------------\n\n")
-	top_five = df_combined.nlargest(n = 5, columns = timeframe + "_" + screen + "_pct_change")
-	top_five = top_five[["company_name_no_spaces", timeframe +"_" + screen + "_pct_change"]]
-	pprint(top_five)
-	print("\n\n---------------------\n\n")
-
-	print("TOP 5 STI STOCKS WITH LOWEST PERCENTAGE CHANGE IN " + screen.upper() + ": " + timeframe.upper() + " SCREEN\n\n")
-	print("---------------------\n\n")
-	bottom_five = df_combined.nsmallest(n = 5, columns = timeframe + "_" + screen + "_pct_change")
-	bottom_five = bottom_five[["company_name_no_spaces", timeframe +"_" + screen + "_pct_change"]]
-	pprint(bottom_five)
-	print("\n\n---------------------\n\n")
 
 
 def technical_analysis_menu():
@@ -778,11 +749,9 @@ if __name__ == "__main__":
 	wrangler = Wrangler()
 	wrangler.wrangle_data()
 	wrangler.combine_data()
-	price_volume_top_pct_change_screener(screen = "price", timeframe = "daily")
-	price_volume_top_pct_change_screener(screen = "price", timeframe = "weekly")
-	price_volume_top_pct_change_screener(screen = "price", timeframe = "monthly")
-	price_volume_top_pct_change_screener(screen = "volume", timeframe = "daily")
-	price_volume_top_pct_change_screener(screen = "volume", timeframe = "weekly")
-	price_volume_top_pct_change_screener(screen = "volume", timeframe = "monthly")
+	top_price_pct_change_screen = TopPricePctChangeScreen(timeframe="daily", n=5)
+	top_volume_pct_change_screen = TopVolumePctChangeScreen(timeframe="daily", n=5)
+	top_price_pct_change_screen.run()
+	top_volume_pct_change_screen.run()
 	technical_analysis_menu()
 	time.sleep(10000)
