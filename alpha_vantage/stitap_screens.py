@@ -32,18 +32,18 @@ class TopPctChangeScreen(ABC):
 	def n(self, n):
 		self._n = n
 
-	def input(self):
+	def _input(self):
 		"""Collects data
 		"""
 		self._df_combined = pd.read_csv("sti_stock_data/combined_data/combined_data.csv")
 
 	@abstractmethod
-	def top_pct_change(self):
+	def _top_pct_change(self):
 		"""Screens stocks with top n percentage change in an attribute
 		"""
 		pass
 
-	def summarize(self):
+	def _summarize(self):
 		"""Runs top_pct_change for each timeframe, summarizing the results
 
 		Keyword Arguments:
@@ -51,19 +51,19 @@ class TopPctChangeScreen(ABC):
 		"""
 		for timeframe in self._timeframes:
 			self.timeframe = timeframe
-			self.top_pct_change()
+			self._top_pct_change()
 
 	def run(self):
 		"""Runs the screen
 		"""
-		self.input()
-		self.summarize()
+		self._input()
+		self._summarize()
 
 
 class TopPricePctChangeScreen(TopPctChangeScreen):
 	"""Screens stocks with top n percentage change in price (in a timeframe)
 	"""
-	def top_pct_change(self):
+	def _top_pct_change(self):
 		"""Screens stocks with top n percentage change in price
 		"""
 		print(f"TOP {self.n} STOCKS WITH HIGHEST PERCENTAGE CHANGE IN PRICE: {self.timeframe.upper()} SCREEN", end="\n"*2)
@@ -84,7 +84,7 @@ class TopPricePctChangeScreen(TopPctChangeScreen):
 class TopVolumePctChangeScreen(TopPctChangeScreen):
 	"""Screens stocks with top n percentage change in volume (in a timeframe)
 	"""
-	def top_pct_change(self):
+	def _top_pct_change(self):
 		"""Screens stocks with top n percentage change in volume
 		"""
 		print(f"TOP {self.n} STOCKS WITH HIGHEST PERCENTAGE CHANGE IN VOLUME: {self.timeframe.upper()} SCREEN", end="\n"*2)
