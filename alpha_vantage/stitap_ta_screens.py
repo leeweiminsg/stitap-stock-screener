@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import time
 from datetime import datetime
 import decimal
+import copy
 from pprint import pprint
 
 import pandas as pd
@@ -18,11 +19,60 @@ sti_stocks = {"CityDev":"C09.SI", "DBS":"D05.SI", "UOL":"U14.SI", "SingTel":"Z74
                 "HongkongLand USD":"H78.SI", "JSH USD":"J37.SI", "JMH USD":"J36.SI", "HPH Trust USD":"NS8U.SI", "Golden Agri-Res":"E5H.SI"}
 
 
+class PrepareTechnicalAnalysis:
+	"""A singleton that prepares and supplies stock data for technical analysis screens
+	"""
+	def __init__(self):
+		self._prepare_data()
+
+	@property
+	def sti_stocks_adjusted_close(self):
+		return self._sti_stocks_adjusted_close
+
+	def _prepare_data(self):
+		"""Prepares stock data for technical analysis screens
+		"""
+		self._sti_stocks_adjusted_close = {}
+		# Converts public holidays from strings to datetime objects
+		sg_public_holidays_datetimes = [datetime.strptime(sg_public_holiday_date, "%Y-%m-%d") for sg_public_holiday_date in sg_public_holidays_dates]
+
+		for stock_name, stock_ticker in sti_stocks.items():
+			time.sleep(0.1)
+			stock_name_no_spaces = stock_name.replace(" ", "_")
+			# Load stock's csv file with date as index
+			df_original = pd.read_csv(f"sti_stock_data/original_data/daily/{stock_name_no_spaces}.csv", index_col=["date"])
+			# Get stock's adjusted close (previous 100 trading sessions)
+			adjusted_close = df_original[["5. adjusted close"]]
+			# Change column name
+			adjusted_close.columns = ["adjusted_close"]
+			# Note:Please refer to sg_public_holidays list at the top of the file for Singapore's public holidays
+			# Note:The date index currently excludes weekends and public holidays
+			# Includes Singapore's public holidays in the date index, if they fall on a weekday
+			# Check whether each public holiday falls within the previous 100 trading sessions' date range
+			# Get start and end dates as datetime objects for the previous 100 trading sessions
+			end_date = adjusted_close.index.values[0]
+			end_date = datetime.strptime(end_date, "%Y-%m-%d")
+			start_date = adjusted_close.index.values[-1]			
+			start_date = datetime.strptime(start_date, "%Y-%m-%d")
+			# Check whether each public holiday falls within date range
+			for sg_public_holidays_datetime in sg_public_holidays_datetimes:
+				# If public holiday falls within range, add public holiday to date index
+				if start_date < sg_public_holidays_datetime < end_date:
+					adjusted_close.loc[sg_public_holidays_datetime.strftime("%Y-%m-%d")] = np.nan
+			# Sort stock's adjusted close dataframe (most recent date on top)
+			adjusted_close.sort_values(by="date", ascending=False, inplace=True)
+			# Backward fill the NaN values with previous day's adjusted close price
+			adjusted_close.fillna(method="bfill", inplace=True)
+			# Sort stock's adjusted close (least recent date on top)
+			adjusted_close.sort_values(by="date", ascending=True, inplace=True)
+			self._sti_stocks_adjusted_close[stock_name] = adjusted_close
+
+
 class TechnicalAnalysisScreener(ABC):
 	"""Abstract base class for technical analysis screener
 	"""
 	def __init__(self):
-		pass
+		self._sti_stocks_adjusted_close = copy.deepcopy(prepare_ta.sti_stocks_adjusted_close)
 
 	def _validate_input(self, prompt, input_type=None, input_range=None):
 		"""Validates user input for settings of stock screen
@@ -77,6 +127,11 @@ class TechnicalAnalysisScreener(ABC):
 class MACDScreener(TechnicalAnalysisScreener):
 	"""Moving Average Convergence/Divergence Screener
 	"""
+	def __init__(self):
+		"""Initializes MACD screener
+		"""
+		super().__init__()
+
 	def _input_settings(self):
 		"""Requests user for settings, displays and validates them
 		"""
@@ -101,39 +156,9 @@ class MACDScreener(TechnicalAnalysisScreener):
 		bearish_macd_crossover = set()
 		no_macd_crossover = set()
 
-		# Converts public holidays from strings to datetime objects
-		sg_public_holidays_datetimes = [datetime.strptime(sg_public_holiday_date, "%Y-%m-%d") for sg_public_holiday_date in sg_public_holidays_dates]
-
 		for stock_name, stock_ticker in sti_stocks.items():
 			time.sleep(0.1)
-			stock_name_no_spaces = stock_name.replace(" ", "_")
-			# Load stock's csv file with date as index
-			df_original = pd.read_csv(f"sti_stock_data/original_data/daily/{stock_name_no_spaces}.csv", index_col=["date"])
-			# Get stock's adjusted close (previous 100 trading sessions)
-			adjusted_close = df_original[["5. adjusted close"]]
-			# Change column name
-			adjusted_close.columns = ["adjusted_close"]
-			# Note:Please refer to sg_public_holidays list at the top of the file for Singapore's public holidays
-			# Note:The date index currently excludes weekends and public holidays
-			# Includes Singapore's public holidays in the date index, if they fall on a weekday
-			# Check whether each public holiday falls within the previous 100 trading sessions' date range
-			# Get start and end dates as datetime objects for the previous 100 trading sessions
-			end_date = adjusted_close.index.values[0]
-			end_date = datetime.strptime(end_date, "%Y-%m-%d")
-			start_date = adjusted_close.index.values[-1]			
-			start_date = datetime.strptime(start_date, "%Y-%m-%d")
-			# Check whether each public holiday falls within date range
-			for sg_public_holidays_datetime in sg_public_holidays_datetimes:
-				# If public holiday falls within range, add public holiday to date index
-				if start_date < sg_public_holidays_datetime < end_date:
-					adjusted_close.loc[sg_public_holidays_datetime.strftime("%Y-%m-%d")] = np.nan
-			# Sort stock's adjusted close series (most recent date on top)
-			adjusted_close.sort_values(by="date", ascending=False, inplace=True)
-			# Backward fill the NaN values with previous day's adjusted close price
-			adjusted_close.fillna(method="bfill", inplace=True)
-			# Note:Above code section is duplicated. Will remove as soon as possible
-			# Sort stock's adjusted close series (least recent date on top)
-			adjusted_close.sort_values(by="date", ascending=True, inplace=True)
+			adjusted_close = self._sti_stocks_adjusted_close[stock_name]
 			# Calculate stock's EWMA
 			adjusted_close["12_day_ema"] = adjusted_close["adjusted_close"].ewm(span=12, min_periods=12, adjust=False).mean()
 			adjusted_close["26_day_ema"] = adjusted_close["adjusted_close"].ewm(span=26, min_periods=26, adjust=False).mean()
@@ -174,6 +199,7 @@ class RSIScreener(TechnicalAnalysisScreener):
 	def __init__(self):
 		"""Initializes RSI screener
 		"""
+		super().__init__()
 		self._timeframe = None
 		self._overbought_level = None
 		self._oversold_level = None
@@ -218,39 +244,9 @@ class RSIScreener(TechnicalAnalysisScreener):
 		rsi_oversold = {}
 		rsi_neutral = {}
 
-		# Converts public holidays from strings to datetime objects
-		sg_public_holidays_datetimes = [datetime.strptime(sg_public_holiday_date, "%Y-%m-%d") for sg_public_holiday_date in sg_public_holidays_dates]
-
 		for stock_name, stock_ticker in sti_stocks.items():
 			time.sleep(0.1)
-			stock_name_no_spaces = stock_name.replace(" ", "_")
-			# Load stock's csv file with date as index
-			df_original = pd.read_csv(f"sti_stock_data/original_data/daily/{stock_name_no_spaces}.csv", index_col=["date"])
-			# Get stock's adjusted close (previous 100 trading sessions)
-			adjusted_close = df_original[["5. adjusted close"]]
-			# Change column name
-			adjusted_close.columns = ["adjusted_close"]
-			# Note:Please refer to sg_public_holidays list at the top of the file for Singapore's public holidays
-			# Note:The date index currently excludes weekends and public holidays
-			# Includes Singapore's public holidays in the date index, if they fall on a weekday
-			# Check whether each public holiday falls within the previous 100 trading sessions' date range
-			# Get start and end dates as datetime objects for the previous 100 trading sessions
-			end_date = adjusted_close.index.values[0]
-			end_date = datetime.strptime(end_date, "%Y-%m-%d")
-			start_date = adjusted_close.index.values[-1]			
-			start_date = datetime.strptime(start_date, "%Y-%m-%d")
-			# Check whether each public holiday falls within date range
-			for sg_public_holidays_datetime in sg_public_holidays_datetimes:
-				# If public holiday falls within range, add public holiday to date index
-				if start_date < sg_public_holidays_datetime < end_date:
-					adjusted_close.loc[sg_public_holidays_datetime.strftime("%Y-%m-%d")] = np.nan
-			# Sort stock's adjusted close series (most recent date on top)
-			adjusted_close.sort_values(by="date", ascending=False, inplace=True)
-			# Backward fill the NaN values with previous day's adjusted close price
-			adjusted_close.fillna(method="bfill", inplace=True)
-			# Note:Above code section is duplicated. Will remove as soon as possible
-			# Sort stock's adjusted close series (least recent date on top)
-			adjusted_close.sort_values(by="date", ascending=True, inplace=True)
+			adjusted_close = self._sti_stocks_adjusted_close[stock_name]
 			# Calculate stock's daily changes in adjusted closing price
 			adjusted_close["daily_price_change"] = adjusted_close["adjusted_close"].diff(periods=1)
 			# Calculate stock's daily changes for up and down days
@@ -314,6 +310,7 @@ class StochRSIScreener(TechnicalAnalysisScreener):
 	def __init__(self):
 		"""Initializes StochRSIScreener
 		"""
+		super().__init__()
 		self._timeframe = None
 		self._overbought_level = None
 		self._oversold_level = None
@@ -358,39 +355,9 @@ class StochRSIScreener(TechnicalAnalysisScreener):
 		stochrsi_oversold = {}
 		stochrsi_neutral = {}
 
-		# Converts public holidays from strings to datetime objects
-		sg_public_holidays_datetimes = [datetime.strptime(sg_public_holiday_date, "%Y-%m-%d") for sg_public_holiday_date in sg_public_holidays_dates]
-
 		for stock_name, stock_ticker in sti_stocks.items():
 			time.sleep(0.1)
-			stock_name_no_spaces = stock_name.replace(" ", "_")
-			# Load stock's csv file with date as index
-			df_original = pd.read_csv(f"sti_stock_data/original_data/daily/{stock_name_no_spaces}.csv", index_col=["date"])
-			# Get stock's adjusted close (previous 100 trading sessions)
-			adjusted_close = df_original[["5. adjusted close"]]
-			# Change column name
-			adjusted_close.columns = ["adjusted_close"]
-			# Note:Please refer to sg_public_holidays list at the top of the file for Singapore's public holidays
-			# Note:The date index currently excludes weekends and public holidays
-			# Includes Singapore's public holidays in the date index, if they fall on a weekday
-			# Check whether each public holiday falls within the previous 100 trading sessions' date range
-			# Get start and end dates as datetime objects for the previous 100 trading sessions
-			end_date = adjusted_close.index.values[0]
-			end_date = datetime.strptime(end_date, "%Y-%m-%d")
-			start_date = adjusted_close.index.values[-1]			
-			start_date = datetime.strptime(start_date, "%Y-%m-%d")
-			# Check whether each public holiday falls within date range
-			for sg_public_holidays_datetime in sg_public_holidays_datetimes:
-				# If public holiday falls within range, add public holiday to date index
-				if start_date < sg_public_holidays_datetime < end_date:
-					adjusted_close.loc[sg_public_holidays_datetime.strftime("%Y-%m-%d")] = np.nan
-			# Sort stock's adjusted close series (most recent date on top)
-			adjusted_close.sort_values(by="date", ascending=False, inplace=True)
-			# Backward fill the NaN values with previous day's adjusted close price
-			adjusted_close.fillna(method="bfill", inplace=True)
-			# Note:Above code section is duplicated. Will remove as soon as possible
-			# Sort stock's adjusted close series (least recent date on top)
-			adjusted_close.sort_values(by="date", ascending=True, inplace=True)
+			adjusted_close = self._sti_stocks_adjusted_close[stock_name]
 			# Calculate stock's daily changes in adjusted closing price
 			adjusted_close["daily_price_change"] = adjusted_close["adjusted_close"].diff(periods=1)
 			# Calculate stock's daily changes for up and down days
@@ -428,7 +395,6 @@ class StochRSIScreener(TechnicalAnalysisScreener):
 			else:
 				print(f"NEUTRAL STOCK: {stock_name}", end="\n"*2)
 				stochrsi_neutral[stock_name] = stoch_rsi
-			pprint(stochastic_relative_strength_index)
 		# Sort results
 		stochrsi_overbought_sorted = sorted(stochrsi_overbought.items(), key =lambda x: x[1], reverse=True)
 		stochrsi_oversold_sorted = sorted(stochrsi_oversold.items(), key=lambda x: x[1])
@@ -451,3 +417,6 @@ class StochRSIScreener(TechnicalAnalysisScreener):
 		print(df_stochrsi_neutral)
 		time.sleep(0.1)
 		print("-"*20, end="\n"*3)
+
+
+prepare_ta = PrepareTechnicalAnalysis()

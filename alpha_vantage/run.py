@@ -12,7 +12,7 @@ from alpha_vantage.timeseries import TimeSeries
 from alpha_vantage.techindicators import TechIndicators
 from stitap_screens import TopPricePctChangeScreen, TopVolumePctChangeScreen
 from stitap_ta_menu import TechnicalAnalysisMenu
-from stitap_ta_screens import MACDScreener, RSIScreener, StochRSIScreener
+from stitap_ta_screens import PrepareTechnicalAnalysis, MACDScreener, RSIScreener, StochRSIScreener
 
 
 sg_public_holidays_dates = ["2018-01-01", "2018-02-16", "2018-03-30", "2018-05-01", "2018-05-29",
