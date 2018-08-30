@@ -1,5 +1,7 @@
 import time
 
+from stitap_ta_screens import MACDScreener, RSIScreener, StochRSIScreener
+
 class TechnicalAnalysisMenu:
 	"""Displays technical analysis menu
 	"""
@@ -16,6 +18,30 @@ class TechnicalAnalysisMenu:
 	@screen.setter
 	def screen(self, screen):
 		self._screen = screen
+
+	def _technical_analysis_screener(self, screen):
+		"""Runs the technical screen of the user's choice
+		
+		Keyword arguments:
+			screen: type of technical indicator to be used for screening
+				"MACD": Moving Average Convergence / Divergence
+				"RSI": Relative Strength Index
+				"STOCHRSI": Stochastic Relative Strength Index
+		"""
+		if screen == "MACD":
+			macd = MACDScreener()
+			macd.run()
+			self.run()
+		elif screen == "RSI":
+			rsi = RSIScreener()
+			rsi.run()
+			self.run()
+		elif screen == "STOCHRSI":
+			stochrsi = StochRSIScreener()
+			stochrsi.run()
+			self.run()
+		else:
+			return
 
 	def _start(self):
 		"""Prints the menu
@@ -42,11 +68,10 @@ class TechnicalAnalysisMenu:
 
 			else:
 				print(f"\n\n\n{self.screen} is invalid input. Please try again.", end="\n"*3)
-		
-		technical_analysis_screener(self.screen)
 
 	def run(self):
 		"""Runs technical analysis menu
 		"""
 		self._start()
 		self._input()
+		self._technical_analysis_screener(self.screen)
