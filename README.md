@@ -1,4 +1,4 @@
-# STITAP Stock Screener V1.1.0
+# STITAP Stock Screener V1.2.0
 
 STITAP stock screener is a free, open-source program which screens all 30 companies of the Straits Times Index using common technical indicators.
 
@@ -100,10 +100,10 @@ You can get in touch with me through my [website](http://www.leeweimin.com/conta
 
 ## TODOs:
 * Improve accuracy of technical indicators (*Done*)
-* Reduce code repetition (*Priority*)
+* Reduce code repetition (*First round of refactoring completed - V1.2.0*)
 * Add more technical indicators
-* Set up a database and server
-* Introduce backtesting
+* Set up a database and server (*Ongoing*)
+* Introduce backtesting (*Ongoing*)
 
 ## Star if you like it.
 If you enjoyed using this, do show your support by starring it!
