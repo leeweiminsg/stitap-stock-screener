@@ -51,7 +51,7 @@ class Initializer(ABC):
 		"""
 		print("-----Straits Times Index Technical Analysis Project: STITAP-----", end="\n"*3)
 		time.sleep(0.1)
-		print("-----V1.1-----", end="\n"*3)
+		print("-----V1.2-----", end="\n"*3)
 		time.sleep(0.1)
 
 	def _loop(self):
